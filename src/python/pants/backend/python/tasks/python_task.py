@@ -40,6 +40,9 @@ class PythonTask(Task):
 
   def __init__(self, *args, **kwargs):
     super(PythonTask, self).__init__(*args, **kwargs)
+
+    #Make sure that pants doesn't interfere with users ~/.pex dir
+    os.environ['PEX_ROOT'] = os.path.join(self.get_options().pants_workdir, '.pex')
     self._compatibilities = self.get_options().interpreter or [b'']
     self._interpreter_cache = None
     self._interpreter = None
