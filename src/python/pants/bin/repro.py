@@ -61,10 +61,8 @@ class Repro(object):
     """
     if os.path.realpath(os.path.expanduser(path)).startswith(buildroot):
       raise ReproError('Repro capture file location must be outside the build root.')
-    # If its a directory then default to repro_datetime.tar.gz
     if not path.endswith('tar.gz') and not path.endswith('.tgz'):
       path += '.tar.gz'
-    # path expanduser, etc
     if os.path.exists(path):
       raise ReproError('Repro capture file already exists: {}'.format(path))
     self._path = os.path.expanduser(path)
