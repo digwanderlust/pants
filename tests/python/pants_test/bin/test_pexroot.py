@@ -22,5 +22,5 @@ class TestPexRoot(PantsRunIntegrationTest):
                                      'tests/python/pants_test/backend/python/tasks:python_task'],
                                      workdir=workdir)
           self.assertTrue(pants_run)
-          # map(print, pants_run.stdout_data.split('\n'))
+          map(print, pants_run.stdout_data.split('\n'))
       self.assertFalse(os.path.exists(user_pex))

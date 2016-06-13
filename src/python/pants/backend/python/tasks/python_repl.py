@@ -12,6 +12,7 @@ from pants.backend.python.targets.python_requirement_library import PythonRequir
 from pants.backend.python.targets.python_target import PythonTarget
 from pants.backend.python.tasks.python_task import PythonTask
 from pants.task.repl_task_mixin import ReplTaskMixin
+from pants.util.contextutil import environment_as
 
 
 class PythonRepl(ReplTaskMixin, PythonTask):
@@ -51,5 +52,6 @@ class PythonRepl(ReplTaskMixin, PythonTask):
 
   # NB: **pex_run_kwargs is used by tests only.
   def launch_repl(self, pex, **pex_run_kwargs):
-    po = pex.run(blocking=False, **pex_run_kwargs)
-    po.wait()
+    with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+      po = pex.run(blocking=False, **pex_run_kwargs)
+      po.wait()

@@ -24,6 +24,7 @@ from pants.binaries.thrift_binary import ThriftBinary
 from pants.ivy.bootstrapper import Bootstrapper
 from pants.ivy.ivy_subsystem import IvySubsystem
 from pants.task.task import Task
+from pants.util.contextutil import environment_as
 
 
 class PythonTask(Task):

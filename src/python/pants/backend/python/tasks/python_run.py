@@ -11,6 +11,7 @@ from pants.backend.python.targets.python_binary import PythonBinary
 from pants.backend.python.tasks.python_task import PythonTask
 from pants.base.exceptions import TaskError
 from pants.base.workunit import WorkUnitLabel
+from pants.util.contextutil import environment_as
 from pants.util.strutil import safe_shlex_split
 
 
@@ -45,16 +46,17 @@ class PythonRun(PythonTask):
         for arg in self.get_options().args:
           args.extend(safe_shlex_split(arg))
         args += self.get_passthru_args()
-        po = pex.run(blocking=False, args=args)
-        try:
-          result = po.wait()
-          if result != 0:
-            msg = '{interpreter} {entry_point} {args} ... exited non-zero ({code})'.format(
-                      interpreter=interpreter.binary,
-                      entry_point=binary.entry_point,
-                      args=' '.join(args),
-                      code=result)
-            raise TaskError(msg, exit_code=result)
-        except KeyboardInterrupt:
-          po.send_signal(signal.SIGINT)
-          raise
+        with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+          po = pex.run(blocking=False, args=args)
+          try:
+            result = po.wait()
+            if result != 0:
+              msg = '{interpreter} {entry_point} {args} ... exited non-zero ({code})'.format(
+                        interpreter=interpreter.binary,
+                        entry_point=binary.entry_point,
+                        args=' '.join(args),
+                        code=result)
+              raise TaskError(msg, exit_code=result)
+          except KeyboardInterrupt:
+            po.send_signal(signal.SIGINT)
+            raise
