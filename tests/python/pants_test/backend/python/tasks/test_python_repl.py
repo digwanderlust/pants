@@ -141,7 +141,7 @@ class PythonReplTest(PythonTaskTestBase):
     with temporary_dir() as tmpdir:
       with environment_as(HOME=tmpdir):
         user_pex = os.path.join(tmpdir, '.pex')
-        self.do_test_binary(self.library)
+        self.do_test_library(self.binary)
         self.assertFalse(os.path.exists(user_pex))
 
   def test_requirement(self):
