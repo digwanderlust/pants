@@ -16,7 +16,7 @@ from pants.build_graph.address import Address
 from pants.build_graph.build_file_aliases import BuildFileAliases
 from pants.build_graph.target import Target
 from pants.task.repl_task_mixin import ReplTaskMixin
-from pants.util.contextutil import temporary_dir
+from pants.util.contextutil import environment_as, temporary_dir
 from pants_test.backend.python.tasks.python_task_test_base import PythonTaskTestBase
 
 
@@ -127,8 +127,22 @@ class PythonReplTest(PythonTaskTestBase):
   def test_library(self):
     self.do_test_library(self.library)
 
+  def test_pex_root_library(self):
+    with temporary_dir() as tmpdir:
+      with environment_as(HOME=tmpdir):
+        user_pex = os.path.join(tmpdir, '.pex')
+        self.do_test_library(self.library)
+        self.assertFalse(os.path.exists(user_pex))
+
   def test_binary(self):
     self.do_test_library(self.binary)
+
+  def test_pex_root_binary(self):
+    with temporary_dir() as tmpdir:
+      with environment_as(HOME=tmpdir):
+        user_pex = os.path.join(tmpdir, '.pex')
+        self.do_test_binary(self.library)
+        self.assertFalse(os.path.exists(user_pex))
 
   def test_requirement(self):
     self.do_test_repl(code=['import six',

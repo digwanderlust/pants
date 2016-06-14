@@ -63,7 +63,8 @@ python_tests(
   dependencies=[
       'tests/python/pants_test:int-test',
       'src/python/pants/util:contextutil',
-  ]
+  ],
+  timeout = 180,
 )
 
 python_tests(
