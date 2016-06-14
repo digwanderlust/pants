@@ -5,14 +5,13 @@
 from __future__ import (absolute_import, division, generators, nested_scopes, print_function,
                         unicode_literals, with_statement)
 
-import os
 import signal
 
 from pants.backend.python.targets.python_binary import PythonBinary
 from pants.backend.python.tasks.python_task import PythonTask
 from pants.base.exceptions import TaskError
 from pants.base.workunit import WorkUnitLabel
-from pants.util.contextutil import environment_as
+# from pants.util.contextutil import environment_as
 from pants.util.strutil import safe_shlex_split
 
 
