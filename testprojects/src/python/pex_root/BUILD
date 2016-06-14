@@ -1,0 +1,9 @@
+python_binary(
+  name='simple',
+  source='simple_binary.py',
+  zip_safe=False,
+  always_write_cache=True,
+  dependencies=[
+    '3rdparty/python:six'
+  ]
+)
