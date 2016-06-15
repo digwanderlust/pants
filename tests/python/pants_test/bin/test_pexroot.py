@@ -40,4 +40,6 @@ class TestPexRoot(PantsRunIntegrationTest):
                                      workdir=workdir)
           self.assertTrue(pants_run)
           map(print, pants_run.stdout_data.split('\n'))
+      print('~* - ', tmpdir)
+      print('~*1 - ', os.listdir(tmpdir))
       self.assertFalse(os.path.exists(user_pex))
