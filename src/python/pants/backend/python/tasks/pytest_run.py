@@ -549,9 +549,10 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
     # scrubbing all `PEX_*` environment overrides and we use overrides when running pexes in this
     # task.
     with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+      print('~3 - ', os.listdir(os.path.join(self.get_options().pants_workdir, '.pex')))
       process = subprocess.Popen(pex.cmdline(args),
                                  preexec_fn=os.setsid if setsid else None,
                                  stdout=workunit.output('stdout'),
                                  stderr=workunit.output('stderr'))
-
+      print('~4 - ', os.listdir(os.path.join(self.get_options().pants_workdir, '.pex')))
     return SubprocessProcessHandler(process)
