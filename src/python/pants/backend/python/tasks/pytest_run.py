@@ -378,6 +378,7 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
         yield args
       finally:
         with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+          self.context.log.debug('>> workdir: {0}'.format(self.get_options().pants_workdir))
           with environment_as(PEX_MODULE='coverage.cmdline:main'):
             def pex_run(args):
               return self._pex_run(pex, workunit, args=args)
@@ -549,12 +550,8 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
     # NB: We don't use pex.run(...) here since it makes a point of running in a clean environment,
     # scrubbing all `PEX_*` environment overrides and we use overrides when running pexes in this
     # task.
-    print('~3 - ', os.listdir(self.get_options().pants_workdir))
-    print(os.environ)
     process = subprocess.Popen(pex.cmdline(args),
                                preexec_fn=os.setsid if setsid else None,
                                stdout=workunit.output('stdout'),
                                stderr=workunit.output('stderr'))
-    print('~4 - ', os.listdir(self.get_options().pants_workdir))
-    print(os.environ)
     return SubprocessProcessHandler(process)
