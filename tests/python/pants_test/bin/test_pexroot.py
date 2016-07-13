@@ -20,6 +20,8 @@ class TestPexRoot(PantsRunIntegrationTest):
           print('\n~2 = ', workdir)
           pants_run = self.run_pants_with_workdir(
                                     ['test',
+                                     '--level',
+                                     'debug',
                                      'tests/python/pants_test/backend/python/tasks:python_task'],
                                      workdir=workdir)
           # print(os.listdir(tmpdir))
