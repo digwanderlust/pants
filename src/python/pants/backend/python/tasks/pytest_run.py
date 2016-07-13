@@ -377,38 +377,39 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
       try:
         yield args
       finally:
-        with environment_as(PEX_MODULE='coverage.cmdline:main'):
-          def pex_run(args):
-            return self._pex_run(pex, workunit, args=args)
+        with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+          with environment_as(PEX_MODULE='coverage.cmdline:main'):
+            def pex_run(args):
+              return self._pex_run(pex, workunit, args=args)
 
-          # On failures or timeouts, the .coverage file won't be written.
-          if not os.path.exists('.coverage'):
-            logger.warning('No .coverage file was found! Skipping coverage reporting.')
-          else:
-            # Normalize .coverage.raw paths using combine and `paths` config in the rc file.
-            # This swaps the /tmp pex chroot source paths for the local original source paths
-            # the pex was generated from and which the user understands.
-            shutil.move('.coverage', '.coverage.raw')
-            pex_run(args=['combine', '--rcfile', coverage_rc])
-            pex_run(args=['report', '-i', '--rcfile', coverage_rc])
-
-            # TODO(wickman): If coverage is enabled and we are not using fast mode, write an
-            # intermediate .html that points to each of the coverage reports generated and
-            # webbrowser.open to that page.
-            # TODO(John Sirois): Possibly apply the same logic to the console report.  In fact,
-            # consider combining coverage files from all runs in this Tasks's execute and then
-            # producing just 1 console and 1 html report whether or not the tests are run in fast
-            # mode.
-            if self.get_options().coverage_output_dir:
-              target_dir = self.get_options().coverage_output_dir
+            # On failures or timeouts, the .coverage file won't be written.
+            if not os.path.exists('.coverage'):
+              logger.warning('No .coverage file was found! Skipping coverage reporting.')
             else:
-              relpath = Target.maybe_readable_identify(targets)
-              pants_distdir = self.context.options.for_global_scope().pants_distdir
-              target_dir = os.path.join(pants_distdir, 'coverage', relpath)
-            safe_mkdir(target_dir)
-            pex_run(args=['html', '-i', '--rcfile', coverage_rc, '-d', target_dir])
-            coverage_xml = os.path.join(target_dir, 'coverage.xml')
-            pex_run(args=['xml', '-i', '--rcfile', coverage_rc, '-o', coverage_xml])
+              # Normalize .coverage.raw paths using combine and `paths` config in the rc file.
+              # This swaps the /tmp pex chroot source paths for the local original source paths
+              # the pex was generated from and which the user understands.
+              shutil.move('.coverage', '.coverage.raw')
+              pex_run(args=['combine', '--rcfile', coverage_rc])
+              pex_run(args=['report', '-i', '--rcfile', coverage_rc])
+
+              # TODO(wickman): If coverage is enabled and we are not using fast mode, write an
+              # intermediate .html that points to each of the coverage reports generated and
+              # webbrowser.open to that page.
+              # TODO(John Sirois): Possibly apply the same logic to the console report.  In fact,
+              # consider combining coverage files from all runs in this Tasks's execute and then
+              # producing just 1 console and 1 html report whether or not the tests are run in fast
+              # mode.
+              if self.get_options().coverage_output_dir:
+                target_dir = self.get_options().coverage_output_dir
+              else:
+                relpath = Target.maybe_readable_identify(targets)
+                pants_distdir = self.context.options.for_global_scope().pants_distdir
+                target_dir = os.path.join(pants_distdir, 'coverage', relpath)
+              safe_mkdir(target_dir)
+              pex_run(args=['html', '-i', '--rcfile', coverage_rc, '-d', target_dir])
+              coverage_xml = os.path.join(target_dir, 'coverage.xml')
+              pex_run(args=['xml', '-i', '--rcfile', coverage_rc, '-o', coverage_xml])
 
   @contextmanager
   def _test_runner(self, targets, workunit):
@@ -548,11 +549,12 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
     # NB: We don't use pex.run(...) here since it makes a point of running in a clean environment,
     # scrubbing all `PEX_*` environment overrides and we use overrides when running pexes in this
     # task.
-    with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
-      print('~3 - ', os.listdir(self.get_options().pants_workdir))
-      process = subprocess.Popen(pex.cmdline(args),
-                                 preexec_fn=os.setsid if setsid else None,
-                                 stdout=workunit.output('stdout'),
-                                 stderr=workunit.output('stderr'))
-      print('~4 - ', os.listdir(self.get_options().pants_workdir))
+    print('~3 - ', os.listdir(self.get_options().pants_workdir))
+    print(os.environ)
+    process = subprocess.Popen(pex.cmdline(args),
+                               preexec_fn=os.setsid if setsid else None,
+                               stdout=workunit.output('stdout'),
+                               stderr=workunit.output('stderr'))
+    print('~4 - ', os.listdir(self.get_options().pants_workdir))
+    print(os.environ)
     return SubprocessProcessHandler(process)
