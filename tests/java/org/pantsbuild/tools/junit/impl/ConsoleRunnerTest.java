@@ -5,19 +5,38 @@ package org.pantsbuild.tools.junit.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import org.apache.commons.io.FileUtils;
-import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.Result;
+import org.junit.runner.notification.RunListener;
+import org.pantsbuild.tools.junit.lib.AnnotatedParallelClassesAndMethodsTest1;
+import org.pantsbuild.tools.junit.lib.AnnotatedParallelMethodsTest1;
+import org.pantsbuild.tools.junit.lib.AnnotatedParallelTest1;
+import org.pantsbuild.tools.junit.lib.AnnotatedSerialTest1;
 import org.pantsbuild.tools.junit.lib.ConsoleRunnerTestBase;
 import org.pantsbuild.tools.junit.lib.FlakyTest;
+import org.pantsbuild.tools.junit.lib.MockBurstParallelClassesAndMethodsTest1;
+import org.pantsbuild.tools.junit.lib.MockBurstParallelMethodsTest;
+import org.pantsbuild.tools.junit.lib.MockParameterizedParallelClassesAndMethodsTest1;
+import org.pantsbuild.tools.junit.lib.MockParameterizedParallelMethodsTest;
 import org.pantsbuild.tools.junit.lib.MockTest4;
+import org.pantsbuild.tools.junit.lib.ParallelClassesAndMethodsDefaultParallelTest1;
+import org.pantsbuild.tools.junit.lib.ParallelMethodsDefaultParallelTest1;
+import org.pantsbuild.tools.junit.lib.ParallelTest1;
+import org.pantsbuild.tools.junit.lib.SerialTest1;
 import org.pantsbuild.tools.junit.lib.TestRegistry;
 
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeThat;
 
 /**
 /**
@@ -104,8 +123,8 @@ public class ConsoleRunnerTest extends ConsoleRunnerTestBase {
 
   @Test
   public void testFlakyTests() {
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.SERIAL));
     FlakyTest.reset();
-
     try {
       invokeConsoleRunner("FlakyTest -num-retries 2 -default-concurrency SERIAL");
       fail("Should have failed with RuntimeException due to FlakyTest.methodAlwaysFails");
@@ -145,9 +164,9 @@ public class ConsoleRunnerTest extends ConsoleRunnerTestBase {
       invokeConsoleRunner("MockTest4 -parallel-threads 1 -xmlreport");
       Assert.assertEquals("test41 test42", TestRegistry.getCalledTests());
       String output = outContent.toString();
-      assertThat(output, CoreMatchers.containsString("test41"));
-      assertThat(output, CoreMatchers.containsString("start test42"));
-      assertThat(output, CoreMatchers.containsString("end test42"));
+      assertThat(output, containsString("test41"));
+      assertThat(output, containsString("start test42"));
+      assertThat(output, containsString("end test42"));
     } finally {
       System.setOut(stdout);
       System.setErr(stderr);
@@ -156,47 +175,77 @@ public class ConsoleRunnerTest extends ConsoleRunnerTestBase {
 
   @Test
   public void testOutputDir() throws Exception {
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.PARALLEL_CLASSES));
+
     String outdir = temporary.newFolder("testOutputDir").getAbsolutePath();
-    invokeConsoleRunner("MockTest4 -parallel-threads 1 -default-concurrency PARALLEL_CLASSES"
-        + " -xmlreport -outdir " + outdir);
+    invokeConsoleRunner("MockTest4 -parallel-threads 1 -default-concurrency PARALLEL_CLASSES "
+        + "-xmlreport -outdir " + outdir);
     Assert.assertEquals("test41 test42", TestRegistry.getCalledTests());
 
     String testClassName = MockTest4.class.getCanonicalName();
     String output = FileUtils.readFileToString(new File(outdir, testClassName + ".out.txt"));
-    assertThat(output, CoreMatchers.containsString("test41"));
-    assertThat(output, CoreMatchers.containsString("start test42"));
-    assertThat(output, CoreMatchers.containsString("end test42"));
+    assertThat(output, containsString("test41"));
+    assertThat(output, containsString("start test42"));
+    assertThat(output, containsString("end test42"));
   }
 
   @Test
   public void testParallelAnnotation() throws Exception {
+    AnnotatedParallelTest1.reset();
     invokeConsoleRunner("AnnotatedParallelTest1 AnnotatedParallelTest2 -parallel-threads 2");
     assertEquals("aptest1 aptest2", TestRegistry.getCalledTests());
   }
 
   @Test
+  public void testParallelMethodsAnnotation() throws Exception {
+    // @ParallelTestMethods only works reliably under the experimental runner
+    assumeThat(parameters.useExperimentalRunner, is(true));
+    AnnotatedParallelMethodsTest1.reset();
+    invokeConsoleRunner("AnnotatedParallelMethodsTest1 AnnotatedParallelMethodsTest2"
+        + " -parallel-threads 2");
+    assertEquals("apmtest11 apmtest12 apmtest21 apmtest22", TestRegistry.getCalledTests());
+  }
+
+  @Test
+  public void testParallelClassesAndMethodsAnnotation() throws Exception {
+    // @ParallelClassesAndMethods only works reliably under the experimental runner
+    assumeThat(parameters.useExperimentalRunner, is(true));
+    AnnotatedParallelClassesAndMethodsTest1.reset();
+    invokeConsoleRunner("AnnotatedParallelClassesAndMethodsTest1"
+        + " AnnotatedParallelClassesAndMethodsTest2 -parallel-threads 4");
+    assertEquals("apcamtest11 apcamtest12 apcamtest21 apcamtest22", TestRegistry.getCalledTests());
+  }
+
+  @Test
   public void testSerialAnnotation() throws Exception {
-    invokeConsoleRunner("AnnotatedSerialTest1 AnnotatedSerialTest2 "
-        + "-default-concurrency PARALLEL_CLASSES -parallel-threads 2");
+    AnnotatedSerialTest1.reset();
+    invokeConsoleRunner("AnnotatedSerialTest1 AnnotatedSerialTest2");
     assertEquals("astest1 astest2", TestRegistry.getCalledTests());
   }
 
   /* LEGACY, remove after -default-parallel argument is removed */
   @Test
   public void testParallelDefaultParallel() throws Exception {
-    invokeConsoleRunner("ParallelTest1 ParallelTest2 -parallel-threads 2 -default-parallel");
+    ParallelTest1.reset();
+    invokeConsoleRunner("ParallelTest1 ParallelTest2 -default-parallel -parallel-threads 2");
     assertEquals("ptest1 ptest2", TestRegistry.getCalledTests());
   }
 
   @Test
   public void testConcurrencyParallelClasses() throws Exception {
-    invokeConsoleRunner("ParallelTest1 ParallelTest2 "
-        + "-parallel-threads 2 -default-concurrency PARALLEL_CLASSES");
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.PARALLEL_CLASSES));
+    ParallelTest1.reset();
+    invokeConsoleRunner("ParallelTest1 ParallelTest2 -parallel-threads 2"
+        + " -default-concurrency PARALLEL_CLASSES");
     assertEquals("ptest1 ptest2", TestRegistry.getCalledTests());
   }
 
   @Test
   public void testConcurrencyParallelMethods() throws Exception {
+    // -default-concurrency PARALLEL_METHODS tests only work reliably with the experimental runner
+    assumeThat(parameters.useExperimentalRunner, is(true));
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.PARALLEL_METHODS));
+    ParallelMethodsDefaultParallelTest1.reset();
     invokeConsoleRunner("ParallelMethodsDefaultParallelTest1 ParallelMethodsDefaultParallelTest2"
         + " -default-concurrency PARALLEL_METHODS -parallel-threads 4");
     assertEquals("pmdptest11 pmdptest12 pmdptest21 pmdptest22", TestRegistry.getCalledTests());
@@ -204,6 +253,8 @@ public class ConsoleRunnerTest extends ConsoleRunnerTestBase {
 
   @Test
   public void testConcurrencyParallelClassesAndMethods() throws Exception {
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.PARALLEL_CLASSES_AND_METHODS));
+    ParallelClassesAndMethodsDefaultParallelTest1.reset();
     invokeConsoleRunner("ParallelClassesAndMethodsDefaultParallelTest1"
         + " ParallelClassesAndMethodsDefaultParallelTest2"
         + " -default-concurrency PARALLEL_CLASSES_AND_METHODS -parallel-threads 4");
@@ -212,9 +263,74 @@ public class ConsoleRunnerTest extends ConsoleRunnerTestBase {
 
   @Test
   public void testConcurrencySerial() throws Exception {
-    invokeConsoleRunner("SerialTest1 SerialTest2"
-            + " -default-concurrency SERIAL -parallel-threads 4");
+    // This test only works when concurrency is serial
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.SERIAL));
+    SerialTest1.reset();
+    invokeConsoleRunner("SerialTest1 SerialTest2");
     assertEquals("stest1 stest2", TestRegistry.getCalledTests());
+  }
+
+
+  @Test
+  public void testBurst() {
+    invokeConsoleRunner("MockBurstTest");
+    assertEquals("btest1:BOTTOM btest1:CHARM btest1:DOWN btest1:STRANGE btest1:TOP btest1:UP",
+        TestRegistry.getCalledTests());
+  }
+
+  @Test
+  public void testConcurrencyParameterizedParallelMethods() {
+    // -default-concurrency PARALLEL_METHODS tests only work reliably with the experimental runner
+    assumeThat(parameters.useExperimentalRunner, is(true));
+    // Requires parallel methods
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.PARALLEL_METHODS));
+    MockParameterizedParallelMethodsTest.reset();
+    invokeConsoleRunner("MockParameterizedParallelMethodsTest -parallel-threads 3");
+    assertEquals("ppmtest1:one ppmtest1:three ppmtest1:two", TestRegistry.getCalledTests());
+  }
+
+  @Test
+  public void testConcurrencyParameterizedParallelClassesAndMethods() {
+    // -default-concurrency PARALLEL_CLASSES_AND_METHODS tests only work reliably with the
+    // experimental runner
+    assumeThat(parameters.useExperimentalRunner, is(true));
+    // Requires parallel methods
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.PARALLEL_CLASSES_AND_METHODS));
+    MockParameterizedParallelClassesAndMethodsTest1.reset();
+    invokeConsoleRunner("MockParameterizedParallelClassesAndMethodsTest1"
+        + " MockParameterizedParallelClassesAndMethodsTest2 -parallel-threads 5");
+    assertEquals("ppcamtest1:param1 ppcamtest1:param2 ppcamtest1:param3"
+            + " ppcamtest2:arg1 ppcamtest2:arg2",
+        TestRegistry.getCalledTests());
+  }
+
+  @Test
+  public void testConcurrencyBurstParallelMethods() {
+    // -default-concurrency PARALLEL_METHODS tests only work reliably with the experimental runner
+    assumeThat(parameters.useExperimentalRunner, is(true));
+    // Requires parallel methods
+    assumeThat(parameters.defaultConcurrency, anyOf(is(Concurrency.PARALLEL_METHODS),
+        is(Concurrency.PARALLEL_CLASSES_AND_METHODS)));
+    MockBurstParallelMethodsTest.reset();
+    invokeConsoleRunner("MockBurstParallelMethodsTest -parallel-threads 6");
+    assertEquals("bpmtest1:BOTTOM bpmtest1:CHARM bpmtest1:DOWN bpmtest1:STRANGE "
+        + "bpmtest1:TOP bpmtest1:UP",
+        TestRegistry.getCalledTests());
+  }
+
+  @Test
+  public void testConcurrencyBurstParallelClassesAndMethods() {
+    // -default-concurrency PARALLEL_CLASSES_AND_METHODS tests only work reliably with the
+    // experimental runner
+    assumeThat(parameters.useExperimentalRunner, is(true));
+    // Requires parallel methods
+    assumeThat(parameters.defaultConcurrency, is(Concurrency.PARALLEL_CLASSES_AND_METHODS));
+    MockBurstParallelClassesAndMethodsTest1.reset();
+    invokeConsoleRunner("MockBurstParallelClassesAndMethodsTest1"
+        + " MockBurstParallelClassesAndMethodsTest2 -parallel-threads 5");
+    assertEquals("bpcamtest1:BLUE bpcamtest1:RED"
+        + " bpcamtest2:APPLE bpcamtest2:BANANA bpcamtest2:CHERRY",
+        TestRegistry.getCalledTests());
   }
 
   @Test
@@ -290,5 +406,31 @@ public class ConsoleRunnerTest extends ConsoleRunnerTestBase {
         ConsoleRunnerImpl.computeConcurrencyOption(null, false));
     assertEquals(Concurrency.PARALLEL_CLASSES,
         ConsoleRunnerImpl.computeConcurrencyOption(null, true));
+  }
+
+  /**
+   * This test reproduces a problem reported in https://github.com/pantsbuild/pants/issues/3638
+   *
+   * It is intended to show that when the test mechanism breaks catastrophically, you see console
+   * output. Verify this is working by manual inspection running this test in IntellIJ.
+   * We don't have a way to capture the console output here, but we could reproduce this
+   * test in a pants integration test once the fix gets released as a new JUnit runner.
+   */
+  @Test
+  public void testRunFinishFailed() throws Exception {
+
+    class AbortInTestRunFinishedListener extends RunListener {
+      @Override public void testRunFinished(Result result) throws Exception {
+        throw new IOException("Bogus IOException");
+      }
+    }
+
+    ConsoleRunnerImpl.addTestListener(new AbortInTestRunFinishedListener());
+
+    try {
+      invokeConsoleRunner("MockTest1");
+      fail("Expected a runtime exception");
+    } catch (RuntimeException expected) {
+    }
   }
 }

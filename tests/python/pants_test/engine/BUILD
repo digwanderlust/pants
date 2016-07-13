@@ -52,6 +52,21 @@ python_tests(
   ]
 )
 
+
+python_tests(
+  name='isolated_process',
+  sources=['test_isolated_process.py'],
+  dependencies=[
+    ':scheduler_test_base',
+    'src/python/pants/engine:fs',
+    'src/python/pants/engine:isolated_process',
+    'src/python/pants/engine:nodes',
+    'src/python/pants/util:dirutil',
+    'tests/python/pants_test/testutils:git_util',
+  ]
+)
+
+
 python_tests(
   name='path_globs',
   sources=['test_path_globs.py'],
@@ -65,6 +80,7 @@ python_tests(
   name='struct',
   sources=['test_struct.py'],
   dependencies=[
+    'src/python/pants/base:project_tree',
     'src/python/pants/build_graph',
     'src/python/pants/engine:objects',
     'src/python/pants/engine:struct',
@@ -80,6 +96,8 @@ python_tests(
     'tests/python/pants_test/engine/examples:planners',
     'src/python/pants/engine:engine',
     'src/python/pants/engine:scheduler',
+    'src/python/pants/engine:nodes',
+    '3rdparty/python:mock',
   ]
 )
 
@@ -147,6 +165,7 @@ python_tests(
   sources=['scheduler_test_base.py'],
   dependencies=[
     'src/python/pants/base:file_system_project_tree',
+    'src/python/pants/engine:engine',
     'src/python/pants/engine:fs',
     'src/python/pants/engine:parser',
     'src/python/pants/engine:scheduler',

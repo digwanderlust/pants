@@ -36,6 +36,7 @@ import org.junit.runner.Result;
 import org.junit.runner.Runner;
 import org.junit.runner.manipulation.Filter;
 import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
 import org.junit.runners.model.InitializationError;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -43,6 +44,8 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.StringArrayOptionHandler;
 import org.pantsbuild.args4j.InvalidCmdLineArgumentException;
+import org.pantsbuild.junit.annotations.TestParallel;
+import org.pantsbuild.junit.annotations.TestSerial;
 import org.pantsbuild.tools.junit.impl.experimental.ConcurrentComputer;
 import org.pantsbuild.tools.junit.withretry.AllDefaultPossibilitiesBuilderWithRetry;
 
@@ -54,6 +57,8 @@ public class ConsoleRunnerImpl {
   private static boolean callSystemExitOnFinish = true;
   /** Intended to be used in unit testing this class */
   private static int exitStatus;
+  /** Intended to be used in unit testing this class */
+  private static RunListener testListener = null;
 
   /**
    * A stream that allows its underlying output to be swapped.
@@ -395,6 +400,10 @@ public class ConsoleRunnerImpl {
       abortableListener.addListener(xmlReportListener);
     }
 
+    if (testListener != null) {
+      abortableListener.addListener(testListener);
+    }
+
     // TODO: Register all listeners to core instead of to abortableListener because
     // abortableListener gets removed when one of the listener throws exceptions in
     // RunNotifier.java. Other listeners should not get removed.
@@ -565,6 +574,13 @@ public class ConsoleRunnerImpl {
     // The legacy runner makes Requests out of each individual method in a class. This isn't
     // designed to work for JUnit3 and isn't appropriate for custom runners.
     if (Util.isJunit3Test(clazz) || Util.isUsingCustomRunner(clazz)) {
+      return false;
+    }
+
+    // TestSerial and TestParallel take precedence over the default concurrency command
+    // line parameter
+    if (clazz.isAnnotationPresent(TestSerial.class)
+        || clazz.isAnnotationPresent(TestParallel.class)) {
       return false;
     }
 
@@ -840,5 +856,9 @@ public class ConsoleRunnerImpl {
 
   public static void setExitStatus(int v) {
     exitStatus = v;
+  }
+
+  public static void addTestListener(RunListener listener) {
+    testListener = listener;
   }
 }
