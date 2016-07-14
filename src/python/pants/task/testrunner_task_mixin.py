@@ -5,10 +5,12 @@
 from __future__ import (absolute_import, division, generators, nested_scopes, print_function,
                         unicode_literals, with_statement)
 
+import os
 from abc import abstractmethod
 from threading import Timer
 
 from pants.base.exceptions import TestFailedTaskError
+from pants.util.contextutil import environment_as
 from pants.util.timeout import Timeout, TimeoutReached
 
 
@@ -75,7 +77,6 @@ class TestRunnerTaskMixin(object):
 
     test_targets = self._get_test_targets_for_spawn()
     timeout = self._timeout_for_targets(test_targets)
-
     process_handler = self._spawn(*args, **kwargs)
 
     def _graceful_terminate(handler, wait_time):

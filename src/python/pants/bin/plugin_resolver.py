@@ -22,6 +22,7 @@ from pkg_resources import Requirement
 from pants.backend.python.python_setup import PythonRepos, PythonSetup
 from pants.option.global_options import GlobalOptionsRegistrar
 from pants.subsystem.subsystem import Subsystem
+from pants.util.contextutil import environment_as
 from pants.util.dirutil import safe_open
 from pants.util.memo import memoized_property
 

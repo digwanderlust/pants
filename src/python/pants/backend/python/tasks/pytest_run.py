@@ -412,6 +412,9 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
 
   @contextmanager
   def _test_runner(self, targets, workunit):
+    print('\n>> 1: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                         contents=os.listdir(os.environ['HOME'])[
+                                                                  :10]))
     interpreter = self.select_interpreter_for_targets(targets)
     pex_info = PexInfo.default()
     pex_info.entry_point = 'pytest'
@@ -423,6 +426,9 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
                                 extra_requirements=self._TESTING_TARGETS)
     pex = chroot.pex()
     with self._maybe_shard() as shard_args:
+      # print('\n>> 3: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+      #                                                      contents=os.listdir(os.environ['HOME'])[
+      #                                                               :10]))
       with self._maybe_emit_junit_xml(targets) as junit_args:
         with self._maybe_emit_coverage_data(targets,
                                             chroot.path(),
@@ -439,6 +445,7 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
       # running pants under CPython 3 which does not unbuffer stdin using this trick.
       env = {
         'PYTHONUNBUFFERED': '1',
+        'PEX_ROOT': os.path.join(self.get_options().pants_workdir, '.pex'),
       }
       profile = self.get_options().profile
       if profile:
@@ -548,7 +555,6 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
     # NB: We don't use pex.run(...) here since it makes a point of running in a clean environment,
     # scrubbing all `PEX_*` environment overrides and we use overrides when running pexes in this
     # task.
-
     process = subprocess.Popen(pex.cmdline(args),
                                preexec_fn=os.setsid if setsid else None,
                                stdout=workunit.output('stdout'),

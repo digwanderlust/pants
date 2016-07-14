@@ -16,6 +16,7 @@ from pex.fetcher import Fetcher
 from pex.pex import PEX
 from pex.platforms import Platform
 from pex.resolver import resolve
+from pex.variables import ENV
 from twitter.common.collections import OrderedSet
 
 from pants.backend.codegen.targets.python_antlr_library import PythonAntlrLibrary
@@ -84,6 +85,9 @@ class PythonChroot(object):
     self.pex_root = pex_root
     self._extra_requirements = list(extra_requirements) if extra_requirements else []
     self._logger = log or logger
+    print('\n>> 2: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                         contents=os.listdir(os.environ['HOME'])[
+                                                                  :10]))
 
     # Note: unrelated to the general pants artifact cache.
     self._artifact_cache_root = os.path.join(
@@ -102,7 +106,10 @@ class PythonChroot(object):
     return os.path.realpath(self._builder.path())
 
   def pex(self):
-    with environment_as(PEX_ROOT=self.pex_root):
+    print('>> self.pex_root: {}'.format(self.pex_root))
+    # with environment_as(PEX_ROOT=self.pex_root):
+    with ENV.patch(PEX_ROOT=self.pex_root):
+      # ENV.init_environ()
       return PEX(self.path(), interpreter=self._interpreter)
 
   def package_pex(self, filename):
