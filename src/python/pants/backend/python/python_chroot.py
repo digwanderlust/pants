@@ -16,7 +16,6 @@ from pex.fetcher import Fetcher
 from pex.pex import PEX
 from pex.platforms import Platform
 from pex.resolver import resolve
-from pex.variables import Variables
 from twitter.common.collections import OrderedSet
 
 from pants.backend.codegen.targets.python_antlr_library import PythonAntlrLibrary
