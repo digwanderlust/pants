@@ -16,6 +16,7 @@ from pex.fetcher import Fetcher
 from pex.pex import PEX
 from pex.platforms import Platform
 from pex.resolver import resolve
+from pex.variables import Variables
 from twitter.common.collections import OrderedSet
 
 from pants.backend.codegen.targets.python_antlr_library import PythonAntlrLibrary
@@ -32,6 +33,7 @@ from pants.build_graph.prep_command import PrepCommand
 from pants.build_graph.resources import Resources
 from pants.build_graph.target import Target
 from pants.invalidation.build_invalidator import BuildInvalidator, CacheKeyGenerator
+from pants.util.contextutil import environment_as
 from pants.util.dirutil import safe_mkdir, safe_mkdtemp, safe_rmtree
 
 
@@ -99,7 +101,8 @@ class PythonChroot(object):
     return os.path.realpath(self._builder.path())
 
   def pex(self):
-    return PEX(self.path(), interpreter=self._interpreter)
+    with environment_as(PEX_ROOT=os.path.join(self.path(), '.pex')):
+      return PEX(self.path(), interpreter=self._interpreter)
 
   def package_pex(self, filename):
     """Package into a PEX zipfile.
