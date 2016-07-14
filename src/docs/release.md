@@ -96,7 +96,7 @@ Dry Run (Optional)
 A dry run is not strictly required since CI includes one, but you might
 like to try one anyway; if so, releases should only be published from
 master, so get on master and ensure your version number commit is present.
-After confirming this, run.test
+After confirming this, run.
 
     :::bash
     $ ./build-support/bin/release.sh -n

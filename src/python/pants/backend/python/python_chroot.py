@@ -69,6 +69,7 @@ class PythonChroot(object):
                builder,
                targets,
                platforms,
+               pex_root,
                extra_requirements=None,
                log=None):
     self._python_setup = python_setup
@@ -80,6 +81,7 @@ class PythonChroot(object):
     self._builder = builder
     self._targets = targets
     self._platforms = platforms
+    self.pex_root = pex_root
     self._extra_requirements = list(extra_requirements) if extra_requirements else []
     self._logger = log or logger
 
@@ -100,7 +102,7 @@ class PythonChroot(object):
     return os.path.realpath(self._builder.path())
 
   def pex(self):
-    with environment_as(PEX_ROOT=os.path.join(self.path(), '.pex')):
+    with environment_as(PEX_ROOT=self.pex_root):
       return PEX(self.path(), interpreter=self._interpreter)
 
   def package_pex(self, filename):

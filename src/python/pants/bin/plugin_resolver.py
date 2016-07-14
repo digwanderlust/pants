@@ -85,12 +85,13 @@ class PluginResolver(object):
     precedence = (EggPackage, SourcePackage)
 
     logger.info('Resolving new plugins...:\n  {}'.format('\n  '.join(self._plugin_requirements)))
-    return resolver.resolve(self._plugin_requirements,
-                            fetchers=self._python_repos.get_fetchers(),
-                            context=self._python_repos.get_network_context(),
-                            precedence=precedence,
-                            cache=self.plugin_cache_dir,
-                            cache_ttl=self._python_setup.resolver_cache_ttl)
+    with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+      return resolver.resolve(self._plugin_requirements,
+                              fetchers=self._python_repos.get_fetchers(),
+                              context=self._python_repos.get_network_context(),
+                              precedence=precedence,
+                              cache=self.plugin_cache_dir,
+                              cache_ttl=self._python_setup.resolver_cache_ttl)
 
   @memoized_property
   def plugin_cache_dir(self):

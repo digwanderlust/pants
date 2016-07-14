@@ -127,6 +127,7 @@ class PythonTask(Task):
                         builder=builder,
                         targets=targets,
                         platforms=platforms,
+                        pex_root=os.path.join(self.get_options().pants_workdir, '.pex'),
                         extra_requirements=extra_requirements,
                         log=self.context.log)
 

@@ -412,7 +412,6 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
 
   @contextmanager
   def _test_runner(self, targets, workunit):
-    # print('\n>> HOME1: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'], contents=os.listdir(os.environ['HOME'])[:10]))
     interpreter = self.select_interpreter_for_targets(targets)
     pex_info = PexInfo.default()
     pex_info.entry_point = 'pytest'
@@ -423,17 +422,12 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
                                 platforms=('current',),
                                 extra_requirements=self._TESTING_TARGETS)
     pex = chroot.pex()
-    # print('\n>> HOME2: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-    #                                                    contents=os.listdir(os.environ['HOME'])[:10]))
     with self._maybe_shard() as shard_args:
       with self._maybe_emit_junit_xml(targets) as junit_args:
         with self._maybe_emit_coverage_data(targets,
                                             chroot.path(),
                                             pex,
                                             workunit) as coverage_args:
-          # print('\n>> HOME*: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-          #                                                    contents=os.listdir(
-          #                                                      os.environ['HOME'])[:10]))
           yield pex, shard_args + junit_args + coverage_args
 
   def _do_run_tests_with_args(self, pex, workunit, args):
@@ -445,23 +439,12 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
       # running pants under CPython 3 which does not unbuffer stdin using this trick.
       env = {
         'PYTHONUNBUFFERED': '1',
-        'PEX_ROOT': os.path.join(self.get_options().pants_workdir)
       }
-      # print('\n>> HOME2: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-      #                                                     contents=os.listdir(os.environ['HOME'])[
-      #                                                              :10]))
-      # print('>> workdir {}'.format(os.path.join(self.get_options().pants_workdir)))
       profile = self.get_options().profile
       if profile:
         env['PEX_PROFILE_FILENAME'] = '{0}.subprocess.{1:.6f}'.format(profile, time.time())
       with environment_as(**env):
-        # print('\n>> HOME5: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-        #                                                     contents=os.listdir(os.environ['HOME'])[
-        #                                                              :10]))
         rc = self._spawn_and_wait(pex, workunit, args=args, setsid=True)
-        # print('\n>> HOME6: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-        #                                                     contents=os.listdir(os.environ['HOME'])[
-        #                                                              :10]))
         return PythonTestResult.rc(rc)
     except TestFailedTaskError:
       # _spawn_and_wait wraps the test runner in a timeout, so it could
@@ -528,11 +511,7 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
     with self._test_runner(targets, workunit) as (pex, test_args):
 
       def run_and_analyze(resultlog_path):
-        # print('\n>> HOME: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-        #                                                    contents=os.listdir(os.environ['HOME'])[:10]))
         result = self._do_run_tests_with_args(pex, workunit, args)
-        # print('\n>> HOME: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-        #                                                    contents=os.listdir(os.environ['HOME'])[:10]))
         failed_targets = self._get_failed_targets_from_resultlogs(resultlog_path, targets)
         return result.with_failed_targets(failed_targets)
 
@@ -569,16 +548,10 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
     # NB: We don't use pex.run(...) here since it makes a point of running in a clean environment,
     # scrubbing all `PEX_*` environment overrides and we use overrides when running pexes in this
     # task.
-    # print('\n>> Before: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-    #                                                     contents=os.listdir(os.environ['HOME'])[
-    #                                                              :10]))
-    # print('>> args: {}'.format(args))
+
     process = subprocess.Popen(pex.cmdline(args),
                                preexec_fn=os.setsid if setsid else None,
                                stdout=workunit.output('stdout'),
                                stderr=workunit.output('stderr'))
 
-    # print('\n>> After: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-    #                                                     contents=os.listdir(os.environ['HOME'])[
-    #                                                              :10]))
     return SubprocessProcessHandler(process)

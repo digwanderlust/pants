@@ -17,7 +17,6 @@ class TestPexRoot(PantsRunIntegrationTest):
       with environment_as(HOME=tmpdir):
         user_pex = os.path.join(tmpdir, '.pex')
         with self.temporary_workdir() as workdir:
-          # print('>> workdir: '.format(workdir))
           pants_run = self.run_pants_with_workdir(
                                     ['test',
                                      # '--level=debug',
@@ -25,6 +24,7 @@ class TestPexRoot(PantsRunIntegrationTest):
                                      workdir=workdir)
           self.assertTrue(pants_run)
           map(print, filter(lambda x: x.startswith('>>'), pants_run.stdout_data.split('\n')))
+          # map(print, pants_run.stdout_data.split('\n'))
       self.assertFalse(os.path.exists(user_pex))
 
   def test_root_set_run(self):
