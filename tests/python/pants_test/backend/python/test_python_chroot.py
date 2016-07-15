@@ -72,6 +72,7 @@ class PythonChrootTest(BaseTest):
                                        interpreter=interpreter,
                                        builder=pex_builder,
                                        targets=targets,
+                                       pex_root=os.path.join(chroot, '.pex'),
                                        platforms=['current'])
           try:
             python_chroot.dump()

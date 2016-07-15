@@ -86,6 +86,7 @@ class PluginResolver(object):
     precedence = (EggPackage, SourcePackage)
 
     logger.info('Resolving new plugins...:\n  {}'.format('\n  '.join(self._plugin_requirements)))
+    import pdb; pdb.set_trace()
     with ENV.patch(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
       return resolver.resolve(self._plugin_requirements,
                               fetchers=self._python_repos.get_fetchers(),
