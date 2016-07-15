@@ -12,6 +12,7 @@ import os
 from pex import resolver
 from pex.base import requirement_is_exact
 from pex.package import EggPackage, SourcePackage
+from pex.variables import ENV
 from pkg_resources import working_set as global_working_set
 from pkg_resources import Requirement
 
@@ -22,7 +23,6 @@ from pkg_resources import Requirement
 from pants.backend.python.python_setup import PythonRepos, PythonSetup
 from pants.option.global_options import GlobalOptionsRegistrar
 from pants.subsystem.subsystem import Subsystem
-from pants.util.contextutil import environment_as
 from pants.util.dirutil import safe_open
 from pants.util.memo import memoized_property
 
@@ -86,7 +86,7 @@ class PluginResolver(object):
     precedence = (EggPackage, SourcePackage)
 
     logger.info('Resolving new plugins...:\n  {}'.format('\n  '.join(self._plugin_requirements)))
-    with environment_as(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+    with ENV.patch(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
       return resolver.resolve(self._plugin_requirements,
                               fetchers=self._python_repos.get_fetchers(),
                               context=self._python_repos.get_network_context(),

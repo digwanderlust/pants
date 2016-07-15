@@ -33,7 +33,6 @@ from pants.build_graph.prep_command import PrepCommand
 from pants.build_graph.resources import Resources
 from pants.build_graph.target import Target
 from pants.invalidation.build_invalidator import BuildInvalidator, CacheKeyGenerator
-from pants.util.contextutil import environment_as
 from pants.util.dirutil import safe_mkdir, safe_mkdtemp, safe_rmtree
 
 
@@ -85,9 +84,6 @@ class PythonChroot(object):
     self.pex_root = pex_root
     self._extra_requirements = list(extra_requirements) if extra_requirements else []
     self._logger = log or logger
-    print('\n>> 2: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
-                                                         contents=os.listdir(os.environ['HOME'])[
-                                                                  :10]))
 
     # Note: unrelated to the general pants artifact cache.
     self._artifact_cache_root = os.path.join(
@@ -106,10 +102,7 @@ class PythonChroot(object):
     return os.path.realpath(self._builder.path())
 
   def pex(self):
-    print('>> self.pex_root: {}'.format(self.pex_root))
-    # with environment_as(PEX_ROOT=self.pex_root):
     with ENV.patch(PEX_ROOT=self.pex_root):
-      # ENV.init_environ()
       return PEX(self.path(), interpreter=self._interpreter)
 
   def package_pex(self, filename):
