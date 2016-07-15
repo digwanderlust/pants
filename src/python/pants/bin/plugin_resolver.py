@@ -12,6 +12,7 @@ import os
 from pex import resolver
 from pex.base import requirement_is_exact
 from pex.package import EggPackage, SourcePackage
+from pex.variables import ENV
 from pkg_resources import working_set as global_working_set
 from pkg_resources import Requirement
 
