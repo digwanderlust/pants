@@ -31,6 +31,7 @@ class TestPexRoot(PantsRunIntegrationTest):
     with temporary_dir() as tmpdir:
       with environment_as(HOME=tmpdir):
         user_pex = os.path.join(tmpdir, '.pex')
+        print('>> {}'.format(user_pex))
         with self.temporary_workdir() as workdir:
           pants_run = self.run_pants_with_workdir(
                                     ['run',

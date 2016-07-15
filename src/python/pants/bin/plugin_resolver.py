@@ -12,7 +12,6 @@ import os
 from pex import resolver
 from pex.base import requirement_is_exact
 from pex.package import EggPackage, SourcePackage
-from pex.variables import ENV
 from pkg_resources import working_set as global_working_set
 from pkg_resources import Requirement
 
@@ -86,14 +85,12 @@ class PluginResolver(object):
     precedence = (EggPackage, SourcePackage)
 
     logger.info('Resolving new plugins...:\n  {}'.format('\n  '.join(self._plugin_requirements)))
-    import pdb; pdb.set_trace()
-    with ENV.patch(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
-      return resolver.resolve(self._plugin_requirements,
-                              fetchers=self._python_repos.get_fetchers(),
-                              context=self._python_repos.get_network_context(),
-                              precedence=precedence,
-                              cache=self.plugin_cache_dir,
-                              cache_ttl=self._python_setup.resolver_cache_ttl)
+    return resolver.resolve(self._plugin_requirements,
+                            fetchers=self._python_repos.get_fetchers(),
+                            context=self._python_repos.get_network_context(),
+                            precedence=precedence,
+                            cache=self.plugin_cache_dir,
+                            cache_ttl=self._python_setup.resolver_cache_ttl)
 
   @memoized_property
   def plugin_cache_dir(self):
