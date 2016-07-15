@@ -437,6 +437,9 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
       # turn off stdin buffering that otherwise occurs.  Setting the PYTHONUNBUFFERED env var to
       # any value achieves this in python2.7.  We'll need a different solution when we support
       # running pants under CPython 3 which does not unbuffer stdin using this trick.
+      #
+      # Python tests are run through a subprocess in order to avoid the env scrubbing.  We still
+      # need to make sure that PEX_ROOT is set though.
       env = {
         'PYTHONUNBUFFERED': '1',
         'PEX_ROOT': os.path.join(self.get_options().pants_workdir, '.pex'),
