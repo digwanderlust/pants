@@ -160,7 +160,14 @@ class PythonTask(Task):
     # created when that pex was built.
     pex_info = PexInfo.from_pex(path)
     # Now create a PythonChroot wrapper without dumping it.
+    print('\n>> HOME~1: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                         contents=os.listdir(os.environ['HOME'])[
+                                                                  :10]))
+
     builder = PEXBuilder(path=path, interpreter=interpreter, pex_info=pex_info, copy=True)
+    print('\n>> HOME~2: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                         contents=os.listdir(os.environ['HOME'])[
+                                                                  :10]))
     return self.create_chroot(interpreter=interpreter,
                               builder=builder,
                               targets=targets,

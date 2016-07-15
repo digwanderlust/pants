@@ -33,9 +33,9 @@ class PluginResolver(object):
   def __init__(self, options_bootstrapper):
     self._options_bootstrapper = options_bootstrapper
 
-    bootstrap_options = self._options_bootstrapper.get_bootstrap_options().for_global_scope()
-    self._plugin_requirements = bootstrap_options.plugins
-    self._plugin_cache_dir = bootstrap_options.plugin_cache_dir
+    self.bootstrap_options = self._options_bootstrapper.get_bootstrap_options().for_global_scope()
+    self._plugin_requirements = self.bootstrap_options.plugins
+    self._plugin_cache_dir = self.bootstrap_options.plugin_cache_dir
 
   def resolve(self, working_set=None):
     """Resolves any configured plugins and adds them to the global working set.
@@ -45,8 +45,10 @@ class PluginResolver(object):
     :type: :class:`pkg_resources.WorkingSet`
     """
     working_set = working_set or global_working_set
+    print('>> here {}'.format(self._plugin_requirements))
     if self._plugin_requirements:
       for plugin_location in self._resolve_plugin_locations():
+        print('\n>> plugin_location: {}'.format(plugin_location))
         working_set.add_entry(plugin_location)
     return working_set
 
@@ -82,9 +84,12 @@ class PluginResolver(object):
     # When bootstrapping plugins without the full pants python backend machinery in-play, we are not
     # guaranteed a properly initialized interpreter with wheel support so we enforce eggs only for
     # bdists with this custom precedence.
+    print('>> in resolve plugins...')
     precedence = (EggPackage, SourcePackage)
 
-    logger.info('Resolving new plugins...:\n  {}'.format('\n  '.join(self._plugin_requirements)))
+    logger.info('>>Resolving new plugins...:\n  {}'.format('\n  '.join(self._plugin_requirements)))
+    with ENV.patch():
+      pass
     return resolver.resolve(self._plugin_requirements,
                             fetchers=self._python_repos.get_fetchers(),
                             context=self._python_repos.get_network_context(),

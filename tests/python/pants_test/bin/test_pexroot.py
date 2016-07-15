@@ -12,21 +12,6 @@ from pants_test.pants_run_integration_test import PantsRunIntegrationTest
 
 
 class TestPexRoot(PantsRunIntegrationTest):
-  def test_root_set_test(self):
-    with temporary_dir() as tmpdir:
-      with environment_as(HOME=tmpdir):
-        user_pex = os.path.join(tmpdir, '.pex')
-        with self.temporary_workdir() as workdir:
-          pants_run = self.run_pants_with_workdir(
-                                    ['test',
-                                     # '--level=debug',
-                                     'tests/python/pants_test/backend/python/tasks:python_task'],
-                                     workdir=workdir)
-          self.assertTrue(pants_run)
-          map(print, filter(lambda x: x.startswith('>>'), pants_run.stdout_data.split('\n')))
-          # map(print, pants_run.stdout_data.split('\n'))
-      self.assertFalse(os.path.exists(user_pex))
-
   def test_root_set_run(self):
     with temporary_dir() as tmpdir:
       with environment_as(HOME=tmpdir):
@@ -34,9 +19,28 @@ class TestPexRoot(PantsRunIntegrationTest):
         print('>> {}'.format(user_pex))
         with self.temporary_workdir() as workdir:
           pants_run = self.run_pants_with_workdir(
-                                    ['run',
-                                     'testprojects/src/python/pex_root:simple'],
-                                     workdir=workdir)
+            ['run',
+             'testprojects/src/python/pex_root:simple'],
+            workdir=workdir)
           self.assertTrue(pants_run)
           map(print, pants_run.stdout_data.split('\n'))
       self.assertFalse(os.path.exists(user_pex))
+
+  def test_root_set_test(self):
+    with temporary_dir() as tmpdir:
+      with environment_as(HOME=tmpdir):
+        user_pex = os.path.join(tmpdir, '.pex')
+        with self.temporary_workdir() as workdir:
+          pants_run = self.run_pants_with_workdir(
+                                    ['test',
+                                     '--level=debug',
+                                     'tests/python/pants_test/backend/python/tasks:python_task'],
+                                     workdir=workdir)
+          self.assertTrue(pants_run)
+          print(os.listdir(tmpdir))
+          print(os.listdir(workdir))
+          map(print, filter(lambda x: x.startswith('>>'), pants_run.stdout_data.split('\n')))
+          # print(os.listdir(os.path.join(user_pex, 'install')))
+          # map(print, pants_run.stdout_data.split('\n'))
+      self.assertFalse(os.path.exists(user_pex))
+      raise SystemExit()

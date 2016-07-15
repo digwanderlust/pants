@@ -8,6 +8,7 @@ from __future__ import (absolute_import, division, generators, nested_scopes, pr
 import itertools
 import logging
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -17,6 +18,7 @@ from contextlib import contextmanager
 from textwrap import dedent
 
 from pex.pex_info import PexInfo
+from pex.variables import ENV
 from six import StringIO
 from six.moves import configparser
 
@@ -145,10 +147,24 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
         # into thinking the terminal window is narrower than it is.
         cols = os.environ.get('COLUMNS', 80)
         with environment_as(COLUMNS=str(int(cols) - 30)):
+          print('\n>> good: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                               contents=os.listdir(
+                                                                 os.environ['HOME'])[
+                                                                        :10]))
           self.run_tests(test_targets, workunit)
+          print('\n>> bad: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                               contents=os.listdir(
+                                                                 os.environ['HOME'])[
+                                                                        :10]))
 
   def run_tests(self, targets, workunit):
+    print('\n>> good: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                         contents=os.listdir(os.environ['HOME'])[
+                                                                  :10]))
     if self.get_options().fast:
+      print('\n>> good: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                           contents=os.listdir(os.environ['HOME'])[
+                                                                    :10]))
       result = self._do_run_tests(targets, workunit)
       if not result.success:
         raise TestFailedTaskError(failed_targets=result.failed_targets)
@@ -413,8 +429,11 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
   @contextmanager
   def _test_runner(self, targets, workunit):
     interpreter = self.select_interpreter_for_targets(targets)
-    pex_info = PexInfo.default()
-    pex_info.entry_point = 'pytest'
+    with ENV.patch(PEX_ROOT=os.path.join(self.get_options().pants_workdir, '.pex')):
+      pex_info = PexInfo.default()
+      pex_info.pex_root=os.path.join(self.get_options().pants_workdir, '.pex')
+      print('\n>> pexinfo: {}'.format(pex_info.install_cache))
+      pex_info.entry_point = 'pytest'
 
     chroot = self.cached_chroot(interpreter=interpreter,
                                 pex_info=pex_info,
@@ -448,7 +467,16 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
       if profile:
         env['PEX_PROFILE_FILENAME'] = '{0}.subprocess.{1:.6f}'.format(profile, time.time())
       with environment_as(**env):
+        print('\n>> ??: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                          contents=os.listdir(
+                                                            os.environ['HOME'])[
+                                                                   :10]))
         rc = self._spawn_and_wait(pex, workunit, args=args, setsid=True)
+        print('\n>> bad: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                             contents=os.listdir(
+                                                               os.environ['HOME'])[
+                                                                      :10]))
+
         return PythonTestResult.rc(rc)
     except TestFailedTaskError:
       # _spawn_and_wait wraps the test runner in a timeout, so it could
@@ -513,9 +541,16 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
       return PythonTestResult.rc(0)
 
     with self._test_runner(targets, workunit) as (pex, test_args):
+      print('\n>> good: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                           contents=os.listdir(os.environ['HOME'])[
+                                                                    :10]))
 
       def run_and_analyze(resultlog_path):
         result = self._do_run_tests_with_args(pex, workunit, args)
+        print('\n>> bad: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                             contents=os.listdir(
+                                                               os.environ['HOME'])[
+                                                                      :10]))
         failed_targets = self._get_failed_targets_from_resultlogs(resultlog_path, targets)
         return result.with_failed_targets(failed_targets)
 
@@ -537,6 +572,9 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
       # The user might have already specified the resultlog option. In such case, reuse it.
       resultlog_arg = _extract_resultlog_filename(args)
 
+      print('\n>> good: {dir}\n>> {contents}\n>>'.format(dir=os.environ['HOME'],
+                                                           contents=os.listdir(os.environ['HOME'])[
+                                                                    :10]))
       if resultlog_arg:
         return run_and_analyze(resultlog_arg)
       else:
@@ -552,6 +590,10 @@ class PytestRun(TestRunnerTaskMixin, PythonTask):
     # NB: We don't use pex.run(...) here since it makes a point of running in a clean environment,
     # scrubbing all `PEX_*` environment overrides and we use overrides when running pexes in this
     # task.
+    print('>> {}'.format(pex.cmdline(args)))
+    print('>> {}'.format(pex.cmdline(args)[1]))
+    shutil.copytree(pex.cmdline(args)[1], '/Users/molsen/molsen_tmp/foo' + str(random.randint(1, 50)))
+
     process = subprocess.Popen(pex.cmdline(args),
                                preexec_fn=os.setsid if setsid else None,
                                stdout=workunit.output('stdout'),
